@@ -24,31 +24,32 @@
   
 self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open('first-app') // Nama cache untuk situs pertama
-      .then(function(cache) {
-        return cache.addAll([
-          '/', // Halaman utama
-          '/index.html',
-          '/src/css/app.css',
-          '/src/js/app.js'
-        ]);
-      })
-  );
+    Promise.all([
+      caches.open('first-app') // Nama cache untuk situs pertama
+        .then(function(cache) {
+          return cache.addAll([
+            '/', // Halaman utama
+            '/index.html',
+            '/src/css/app.css',
+            '/src/js/app.js'
+          ]);
+        }),
 
-  event.waitUntil(
-    caches.open('second-app') // Nama cache untuk situs kedua
-      .then(function(cache) {
-        return cache.addAll([
-          '/', // Halaman utama
-          '/index.html',
-          '/src/css/app.css',
-          '/src/js/app.js'
-        ]);
-      })
+      caches.open('second-app') // Nama cache untuk situs kedua
+        .then(function(cache) {
+          return cache.addAll([
+            '/', // Halaman utama
+            '/index.html',
+            '/src/css/app.css',
+            '/src/js/app.js'
+          ]);
+        })
+    ])
   );
 
   return self.clients.claim();
 });
+
 
 self.addEventListener('fetch', function(event) {
   // Menentukan apakah permintaan berasal dari path pertama atau kedua
