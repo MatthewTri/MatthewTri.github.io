@@ -1,91 +1,128 @@
-// self.addEventListener('install', function(event) {
-//     event.waitUntil(
-//       caches.open('first-app')
-//         .then(function(cache) {
-//           cache.addAll([
-//             '/',
-//             '/index.html',
-//             '/src/css/app.css',
-//             '/src/js/app.js'
-//           ])
-//         })
-//     );
-//     return self.clients.claim();
-//   });
-  
-//   self.addEventListener('fetch', function(event) {
-//     event.respondWith(
-//       caches.match(event.request)
-//         .then(function(res) {
-//           return res;
-//         })
-//     );
-//   });
-  
-self.addEventListener('install', function(event) {
+var CACHE_STATIC_NAME = 'static-v10';
+var CACHE_DYNAMIC_NAME = 'dynamic-v2';
+
+self.addEventListener('install', function (event) {
+  console.log('[Service Worker] Installing Service Worker ...', event);
   event.waitUntil(
-    Promise.all([
-      caches.open('first-app') // Nama cache untuk situs pertama
-        .then(function(cache) {
-          return cache.addAll([
-            '/', // Halaman utama
-            '/index.html',
-            '/src/css/app.css',
-            '/src/js/app.js'
-          ]);
-        }),
+    caches.open(CACHE_STATIC_NAME)
+      .then(function (cache) {
+        console.log('[Service Worker] Precaching App Shell');
+        cache.addAll([
+          '/',
+          '/index.html',
+          '/offline.html',
+          '/src/js/app.js',
+          '/src/js/feed.js',
+          '/src/js/promise.js',
+          '/src/js/fetch.js',
+          '/src/js/material.min.js',
+          '/src/css/app.css',
+          '/src/css/feed.css',
+          '/src/images/main-image.jpg',
+          'https://fonts.googleapis.com/css?family=Roboto:400,700',
+          'https://fonts.googleapis.com/icon?family=Material+Icons',
+          'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
+        ]);
+      })
+  )
+});
 
-      caches.open('second-app') // Nama cache untuk situs kedua
-        .then(function(cache) {
-          return cache.addAll([
-            '/', // Halaman utama
-            '/index.html',
-            '/src/css/app.css',
-            '/src/js/app.js'
-          ]);
-        })
-    ])
+self.addEventListener('activate', function (event) {
+  console.log('[Service Worker] Activating Service Worker ....', event);
+  event.waitUntil(
+    caches.keys()
+      .then(function (keyList) {
+        return Promise.all(keyList.map(function (key) {
+          if (key !== CACHE_STATIC_NAME && key !== CACHE_DYNAMIC_NAME) {
+            console.log('[Service Worker] Removing old cache.', key);
+            return caches.delete(key);
+          }
+        }));
+      })
   );
-
   return self.clients.claim();
 });
 
-
 self.addEventListener('fetch', function(event) {
-  // Menentukan apakah permintaan berasal dari path pertama atau kedua
-  const url = new URL(event.request.url);
-
-  if (url.pathname.startsWith('/coba/')) {
-    // Jika URL mengarah ke '/coba/', gunakan cache 'second-app'
-    event.respondWith(
-      caches.match(event.request, { cacheName: 'second-app' })
-        .then(function(res) {
-          return res || fetch(event.request); // Jika tidak ada di cache, ambil dari server
-        })
-    );
-  } else {
-    // Jika URL tidak mengarah ke '/coba/', gunakan cache 'first-app'
-    event.respondWith(
-      caches.match(event.request, { cacheName: 'first-app' })
-        .then(function(res) {
-          return res || fetch(event.request); // Jika tidak ada di cache, ambil dari server
-        })
-    );
-  }
-});
-
-// Aktivasi - Menghapus cache lama jika ada
-self.addEventListener('activate', function(event) {
-  var cacheWhitelist = ['first-app', 'second-app']; // Cache yang akan disimpan
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName); // Hapus cache lama
-          }
-        })
-      );
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then(function(res) {
+        return caches.open(CACHE_DYNAMIC_NAME)
+          .then(function(cache) {
+            cache.put(event.request.url, res.clone());
+            return res;
+          });
+      })
+      .catch(function() {
+        return caches.match(event.request)
+          .then(function(response) {
+            if (response) {
+              return response;
+            } else {
+              return caches.match('/offline.html');
+            }
+          });
+      })
   );
 });
+
+// var CACHE_STATIC_NAME = 'static-v10';
+// var CACHE_DYNAMIC_NAME = 'dynamic-v2';
+
+// self.addEventListener('install', function (event) {
+//   console.log('[Service Worker] Installing Service Worker ...', event);
+//   event.waitUntil(
+//     caches.open(CACHE_STATIC_NAME)
+//       .then(function (cache) {
+//         console.log('[Service Worker] Precaching App Shell');
+//         cache.addAll([
+//           '/',
+//           '/index.html',
+//           '/offline.html',
+//           '/src/js/app.js',
+//           '/src/js/feed.js',
+//           '/src/js/promise.js',
+//           '/src/js/fetch.js',
+//           '/src/js/material.min.js',
+//           '/src/css/app.css',
+//           '/src/css/feed.css',
+//           '/src/images/main-image.jpg',
+//           'https://fonts.googleapis.com/css?family=Roboto:400,700',
+//           'https://fonts.googleapis.com/icon?family=Material+Icons',
+//           'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
+//         ]);
+//       })
+//   )
+// });
+
+// self.addEventListener('activate', function (event) {
+//   console.log('[Service Worker] Activating Service Worker ....', event);
+//   event.waitUntil(
+//     caches.keys()
+//       .then(function (keyList) {
+//         return Promise.all(keyList.map(function (key) {
+//           if (key !== CACHE_STATIC_NAME && key !== CACHE_DYNAMIC_NAME) {
+//             console.log('[Service Worker] Removing old cache.', key);
+//             return caches.delete(key);
+//           }
+//         }));
+//       })
+//   );
+//   return self.clients.claim();
+// });
+
+// self.addEventListener('fetch', function(event) {
+//   event.respondWith(
+//     fetch(event.request)
+//       .then(function(res) {
+//         return caches.open(CACHE_DYNAMIC_NAME)
+//           .then(function(cache) {
+//             cache.put(event.request.url, res.clone());
+//             return res;
+//           });
+//       })
+//       .catch(function() {
+//         return caches.match(event.request);
+//       })
+//   );
+// });

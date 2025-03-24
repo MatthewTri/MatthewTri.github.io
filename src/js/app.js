@@ -1,87 +1,24 @@
-var title = document.querySelector('.title');
-var courseFeatureElements = document.querySelectorAll('.course-feature');
-var button = document.querySelector('button');
-var installButton = document.getElementById('install-button');
-let deferredPrompt;
 
-navigator.serviceWorker.register('/sw.js');
+var deferredPrompt;
 
-function animate() {
-  title.classList.remove('animate-in');
-  for (var i = 0; i < courseFeatureElements.length; i++) {
-    courseFeatureElements[i].classList.remove('animate-in');
-  }
-  button.classList.remove('animate-in');
-
-  setTimeout(function () {
-    title.classList.add('animate-in');
-  }, 1000);
-
-  setTimeout(function () {
-    courseFeatureElements[0].classList.add('animate-in');
-  }, 3000);
-
-  setTimeout(function () {
-    courseFeatureElements[1].classList.add('animate-in');
-  }, 4500);
-
-  setTimeout(function () {
-    courseFeatureElements[2].classList.add('animate-in');
-  }, 6000);
-
-  setTimeout(function () {
-    courseFeatureElements[3].classList.add('animate-in');
-  }, 7500);
-
-  setTimeout(function () {
-    courseFeatureElements[4].classList.add('animate-in');
-  }, 9000);
-
-  setTimeout(function () {
-    courseFeatureElements[5].classList.add('animate-in');
-  }, 10500);
-
-  setTimeout(function () {
-    courseFeatureElements[6].classList.add('animate-in');
-  }, 12000);
-
-  setTimeout(function () {
-    button.classList.add('animate-in');
-  }, 13500);
+if (!window.Promise) {
+  window.Promise = Promise;
 }
 
-animate();
-
-button.addEventListener('click', function() {
-  animate();
-});
-
-// Install button logic
-window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent the mini-infobar from appearing on mobile
-  e.preventDefault();
-  // Stash the event so it can be triggered later.
-  deferredPrompt = e;
-  // Update UI notify the user they can install the PWA
-  installButton.style.display = 'block';
-
-  installButton.addEventListener('click', (e) => {
-    // Hide the install button
-    installButton.style.display = 'none';
-    // Show the install prompt
-    deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      deferredPrompt = null;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/sw.js')
+    .then(function () {
+      console.log('Service worker registered!');
+    })
+    .catch(function(err) {
+      console.log(err);
     });
-  });
-});
+}
 
-window.addEventListener('appinstalled', (evt) => {
-  console.log('PWA was installed');
+window.addEventListener('beforeinstallprompt', function(event) {
+  console.log('beforeinstallprompt fired');
+  event.preventDefault();
+  deferredPrompt = event;
+  return false;
 });
