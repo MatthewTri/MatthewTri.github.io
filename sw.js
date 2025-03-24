@@ -45,21 +45,21 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function(event) {
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request) // network dulu
       .then(function(res) {
-        return caches.open(CACHE_DYNAMIC_NAME)
+        return caches.open(CACHE_DYNAMIC_NAME) // jika berhasil simpan ke dynamic cache
           .then(function(cache) {
             cache.put(event.request.url, res.clone());
             return res;
           });
       })
-      .catch(function() {
-        return caches.match(event.request)
+      .catch(function() { // jika gagal
+        return caches.match(event.request) // ambil dari cache dulu
           .then(function(response) {
             if (response) {
-              return response;
+              return response; // jika ada return respon
             } else {
-              return caches.match('/offline.html');
+              return caches.match('/offline.html'); // jike tidak ada return offline.html
             }
           });
       })
